@@ -39,7 +39,7 @@ xlim([0 length(x1)+1])
 if mod
     xlim([0 length(x1)+2])
 end
-xlabel('Deletion probability [%]')
+xlabel('Deletion probability (%)', 'interpreter','tex')
 % xlabel('Burst duration [s]')
 set(gca,'XTick',1:size(values1,2),'XTickLabel',stages)
 if mod
