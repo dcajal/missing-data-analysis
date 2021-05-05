@@ -83,53 +83,31 @@ for kk = 1:length(subject)
         TiltIPFM.pxx = pwelch(auxTilt,wdw,noverlap,TiltIPFM.f,fs);
         clear wdw noverlap bb aa auxTilt auxSupine
         
-        if jj==1
-            figure('DefaultAxesFontSize',14); hold on;
-            plot(TiltIPFM.f,TiltIPFM.pxx,'LineWidth',2); hold on
-            title(subject{kk})
-        else
-            plot(TiltIPFM.f,TiltIPFM.pxx,'LineWidth',1); hold on
-        end
-        xlabel('Frequency [Hz]')
-        ylabel('PSD_{Welch} [ms^2/Hz]','interpreter','tex')
-        axis tight
-        set(gcf,'position',[0,0,1000,300])
-        if jj==length(burstDuration)
-            legend('0s','10s','20s','30s','40s','50s','60s');
-        end
+%         if jj==1
+%             figure('DefaultAxesFontSize',14); hold on;
+%             plot(TiltIPFM.f,TiltIPFM.pxx,'LineWidth',2); hold on
+%             title(subject{kk})
+%         else
+%             plot(TiltIPFM.f,TiltIPFM.pxx,'LineWidth',1); hold on
+%         end
+%         xlabel('Frequency [Hz]')
+%         ylabel('PSD_{Welch} [ms^2/Hz]','interpreter','tex')
+%         axis tight
+%         set(gcf,'position',[0,0,1000,300])
+%         if jj==length(burstDuration)
+%             legend('0s','10s','20s','30s','40s','50s','60s');
+%         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
        
-        % HF
-        HFBand = [find(SupineIPFM.f>=0.15,1) find(SupineIPFM.f>=0.4,1)];
-        SupineIPFM.hf = trapz(SupineIPFM.f(HFBand(1):HFBand(2)),SupineIPFM.pxx(HFBand(1):HFBand(2)));
-        TiltIPFM.hf = trapz(TiltIPFM.f(HFBand(1):HFBand(2)),TiltIPFM.pxx(HFBand(1):HFBand(2)));
-        
-        % LF
-        LFBand = [find(SupineIPFM.f>=0.04,1) find(SupineIPFM.f>=0.15,1)];
-        SupineIPFM.lf = trapz(SupineIPFM.f(LFBand(1):LFBand(2)),SupineIPFM.pxx(LFBand(1):LFBand(2)));
-        TiltIPFM.lf = trapz(TiltIPFM.f(LFBand(1):LFBand(2)),TiltIPFM.pxx(LFBand(1):LFBand(2)));
-               
-        % LFn
-        SupineIPFM.lfn = SupineIPFM.lf/(SupineIPFM.lf+SupineIPFM.hf);
-        TiltIPFM.lfn = TiltIPFM.lf/(TiltIPFM.lf+TiltIPFM.hf);
-        
-        % LF/HF
-        SupineIPFM.lfhf = SupineIPFM.lf/SupineIPFM.hf;
-        TiltIPFM.lfhf = TiltIPFM.lf/TiltIPFM.hf;
-
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-        % Save results
-        resultsSupineIPFM{kk,jj} = SupineIPFM;
-        resultsTiltIPFM{kk,jj} = TiltIPFM;
+        resultsSupineIPFM{kk,jj} = freqind(SupineIPFM.pxx,SupineIPFM.f);
+        resultsTiltIPFM{kk,jj} = freqind(TiltIPFM.pxx,TiltIPFM.f);
              
     end
 end
 
-clear SupineECG SupineIPFM TiltECG TiltIPFM jj kk fs nfft overlapSeconds windowSeconds HFBand LFBand
+clear SupineECG SupineIPFM TiltECG TiltIPFM jj kk fs nfft overlapSeconds windowSeconds
 
 %% Degradation results
 
@@ -141,25 +119,25 @@ fprintf('                 '); fprintf('%i          ',burstDuration(2:end)); fpri
 fprintf('---------------------------------------------------------------------------------------\n')
 
 
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'lf', true);
+RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'LF', true);
 xlabel('Burst duration (s)','interpreter','tex')
 ylabel('P_{LF} [ms^2]','interpreter','tex');
 fprintf('P_LF (norm)    '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'hf', true);
+RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'HF', true);
 xlabel('Burst duration (s)','interpreter','tex')
 ylabel('P_{HF} [ms^2]','interpreter','tex')
 fprintf('P_HF (norm)    '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'lfn');
+RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'LFn');
 xlabel('Burst duration (s)','interpreter','tex')
 ylabel('P_{LFn}','interpreter','tex')
 fprintf('P_LFn          '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'lfhf');
+RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'LFHF');
 xlabel('Burst duration (s)','interpreter','tex')
 ylabel('P_{LF}/P_{HF}','interpreter','tex')
 fprintf('P_LF/P_HF      '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
@@ -178,19 +156,19 @@ disp('Measure          Deletion probability (%)');
 fprintf('                 '); fprintf('%i          ',burstDuration); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
 
-significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'lf');
+significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'LF');
 ylabel('P_{LF} [ms^2]','interpreter','tex')
 fprintf('P_LF (norm)    '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
-significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'hf');
+significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'HF');
 ylabel('P_{HF} [ms^2]','interpreter','tex')
 fprintf('P_HF (norm)    '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
-significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'lfn');
+significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'LFn');
 ylabel('P_{LFn}','interpreter','tex')
 fprintf('P_LFn          '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
-significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'lfhf');
+significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'LFHF');
 ylabel('P_{LF}/P_{HF}','interpreter','tex')
 fprintf('P_LF/P_HF      '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')

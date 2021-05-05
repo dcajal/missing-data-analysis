@@ -73,7 +73,6 @@ for kk = 1:length(subject)
         clear threshold
 
         SupineLomb.pxx = plombav(SupineLomb.tk,SupineLomb.dtk,SupineLomb.f,windowSeconds,overlapSeconds);
-%         SupineLomb.pxx = plomb(SupineLomb.dtk,SupineLomb.tk,SupineLomb.f);
 
          [bb, aa] = butter(15, 0.04*2, 'high');
         h = freqz(bb,aa,nfft);
@@ -98,8 +97,6 @@ for kk = 1:length(subject)
         clear threshold
 
         TiltLomb.pxx = plombav(TiltLomb.tk,TiltLomb.dtk,TiltLomb.f,windowSeconds,overlapSeconds);
-%         TiltLomb.pxx = plomb(TiltLomb.dtk,TiltLomb.tk,TiltLomb.f);
-
         
         [bb, aa] = butter(15, 0.04*2, 'high');
         h = freqz(bb,aa,nfft);
@@ -107,53 +104,31 @@ for kk = 1:length(subject)
         TiltLomb.pxx = TiltLomb.pxx;
         clear h bb aa           
         
-        if jj==1
-            figure('DefaultAxesFontSize',14); hold on;
-            plot(TiltLomb.f,TiltLomb.pxx,'LineWidth',2); hold on
-            title(subject{kk})
-        else
-            plot(TiltLomb.f,TiltLomb.pxx,'LineWidth',1); hold on
-        end
-        xlabel('Frequency [Hz]')
-        ylabel('PSD_{Lomb} [ms^2/Hz]','interpreter','tex')
-        axis tight
-        set(gcf,'position',[0,0,1000,300])
-        if jj==length(burstDuration)
-            legend('0s','10s','20s','30s','40s','50s','60s');
-        end
+%         if jj==1
+%             figure('DefaultAxesFontSize',14); hold on;
+%             plot(TiltLomb.f,TiltLomb.pxx,'LineWidth',2); hold on
+%             title(subject{kk})
+%         else
+%             plot(TiltLomb.f,TiltLomb.pxx,'LineWidth',1); hold on
+%         end
+%         xlabel('Frequency [Hz]')
+%         ylabel('PSD_{Lomb} [ms^2/Hz]','interpreter','tex')
+%         axis tight
+%         set(gcf,'position',[0,0,1000,300])
+%         if jj==length(burstDuration)
+%             legend('0s','10s','20s','30s','40s','50s','60s');
+%         end
         
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-        % HF
-        HFBand = [find(SupineLomb.f>=0.15,1) find(SupineLomb.f>=0.4,1)];
-        SupineLomb.hf = trapz(SupineLomb.f(HFBand(1):HFBand(2)),SupineLomb.pxx(HFBand(1):HFBand(2)));
-        TiltLomb.hf = trapz(TiltLomb.f(HFBand(1):HFBand(2)),TiltLomb.pxx(HFBand(1):HFBand(2)));
-        
-        % LF
-        LFBand = [find(SupineLomb.f>=0.04,1) find(SupineLomb.f>=0.15,1)];
-        SupineLomb.lf = trapz(SupineLomb.f(LFBand(1):LFBand(2)),SupineLomb.pxx(LFBand(1):LFBand(2)));
-        TiltLomb.lf = trapz(TiltLomb.f(LFBand(1):LFBand(2)),TiltLomb.pxx(LFBand(1):LFBand(2)));
-        
-        % LFn
-        SupineLomb.lfn = SupineLomb.lf/(SupineLomb.lf+SupineLomb.hf);
-        TiltLomb.lfn = TiltLomb.lf/(TiltLomb.lf+TiltLomb.hf);
-        
-        % LF/HF
-        SupineLomb.lfhf = SupineLomb.lf/SupineLomb.hf;
-        TiltLomb.lfhf = TiltLomb.lf/TiltLomb.hf;
-        
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-       
-        % Save results
-        resultsSupineLomb{kk,jj} = SupineLomb;
-        resultsTiltLomb{kk,jj} = TiltLomb;
+        resultsSupineLomb{kk,jj} = freqind(SupineLomb.pxx,SupineLomb.f);
+        resultsTiltLomb{kk,jj} = freqind(TiltLomb.pxx,TiltLomb.f);
     end
 end
 
-clear SupineECG SupineLomb TiltECG TiltLomb jj kk fs nfft overlapSeconds windowSeconds HFBand LFBand
+clear SupineECG SupineLomb TiltECG TiltLomb jj kk fs nfft overlapSeconds windowSeconds
 
 %% Degradation results
 
@@ -165,25 +140,25 @@ fprintf('                 '); fprintf('%i          ',burstDuration(2:end)); fpri
 fprintf('---------------------------------------------------------------------------------------\n')
 
 
-RMSE = computeError(resultsSupineLomb, resultsTiltLomb, burstDuration, 'lf', true);
+RMSE = computeError(resultsSupineLomb, resultsTiltLomb, burstDuration, 'LF', true);
 xlabel('Burst duration (s)','interpreter','tex')
 ylabel('P_{LF} [ms^2]','interpreter','tex')
 fprintf('P_LF (norm)    '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineLomb, resultsTiltLomb, burstDuration, 'hf', true);
+RMSE = computeError(resultsSupineLomb, resultsTiltLomb, burstDuration, 'HF', true);
 xlabel('Burst duration (s)','interpreter','tex')
 ylabel('P_{HF} [ms^2]','interpreter','tex')
 fprintf('P_HF (norm)    '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineLomb, resultsTiltLomb, burstDuration, 'lfn');
+RMSE = computeError(resultsSupineLomb, resultsTiltLomb, burstDuration, 'LFn');
 xlabel('Burst duration (s)','interpreter','tex')
 ylabel('P_{LFn}','interpreter','tex')
 fprintf('P_LFn          '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineLomb, resultsTiltLomb, burstDuration, 'lfhf');
+RMSE = computeError(resultsSupineLomb, resultsTiltLomb, burstDuration, 'LFHF');
 xlabel('Burst duration (s)','interpreter','tex')
 ylabel('P_{LF}/P_{HF}','interpreter','tex')
 fprintf('P_LF/P_HF      '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
@@ -201,19 +176,19 @@ disp('Measure          Deletion probability (%)');
 fprintf('                 '); fprintf('%i          ',burstDuration); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
 
-significance = twoGroupsDegradation(resultsSupineLomb, resultsTiltLomb, burstDuration, 'lf');
+significance = twoGroupsDegradation(resultsSupineLomb, resultsTiltLomb, burstDuration, 'LF');
 ylabel('P_{LF} [ms^2]','interpreter','tex')
 fprintf('P_LF (norm)    '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
-significance = twoGroupsDegradation(resultsSupineLomb, resultsTiltLomb, burstDuration, 'hf');
+significance = twoGroupsDegradation(resultsSupineLomb, resultsTiltLomb, burstDuration, 'HF');
 ylabel('P_{HF} [ms^2]','interpreter','tex')
 fprintf('P_HF (norm)    '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
-significance = twoGroupsDegradation(resultsSupineLomb, resultsTiltLomb, burstDuration, 'lfn');
+significance = twoGroupsDegradation(resultsSupineLomb, resultsTiltLomb, burstDuration, 'LFn');
 ylabel('P_{LFn}','interpreter','tex')
 fprintf('P_LFn          '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
-significance = twoGroupsDegradation(resultsSupineLomb, resultsTiltLomb, burstDuration, 'lfhf');
+significance = twoGroupsDegradation(resultsSupineLomb, resultsTiltLomb, burstDuration, 'LFHF');
 ylabel('P_{LF}/P_{HF}','interpreter','tex')
 fprintf('P_LF/P_HF      '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')

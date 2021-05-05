@@ -81,53 +81,31 @@ for kk = 1:length(subject)
         TiltIPFM.pxx = pwelch(auxTilt,wdw,noverlap,TiltIPFM.f,fs);
         clear wdw noverlap bb aa auxTilt auxSupine
         
-        if deletionProbability(jj)==0
-            figure('DefaultAxesFontSize',14); hold on;
-            plot(SupineIPFM.f,SupineIPFM.pxx,'LineWidth',2);
-            title(subject{kk})
-        else
-            plot(SupineIPFM.f,SupineIPFM.pxx,'LineWidth',1); hold on
-        end
-        xlabel('Frequency [Hz]')
-        ylabel('PSD_{Welch} [ms^2/Hz]','interpreter','tex')
-        axis tight
-        set(gcf,'position',[0,0,1000,300])
-        if deletionProbability(jj)==0.25
-            legend('0%','5%','10%','15%','20%','25%');
-        end
+%         if deletionProbability(jj)==0
+%             figure('DefaultAxesFontSize',14); hold on;
+%             plot(SupineIPFM.f,SupineIPFM.pxx,'LineWidth',2);
+%             title(subject{kk})
+%         else
+%             plot(SupineIPFM.f,SupineIPFM.pxx,'LineWidth',1); hold on
+%         end
+%         xlabel('Frequency [Hz]')
+%         ylabel('PSD_{Welch} [ms^2/Hz]','interpreter','tex')
+%         axis tight
+%         set(gcf,'position',[0,0,1000,300])
+%         if deletionProbability(jj)==0.25
+%             legend('0%','5%','10%','15%','20%','25%');
+%         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
        
-        % HF
-        HFBand = [find(SupineIPFM.f>=0.15,1) find(SupineIPFM.f>=0.4,1)];
-        SupineIPFM.hf = trapz(SupineIPFM.f(HFBand(1):HFBand(2)),SupineIPFM.pxx(HFBand(1):HFBand(2)));
-        TiltIPFM.hf = trapz(TiltIPFM.f(HFBand(1):HFBand(2)),TiltIPFM.pxx(HFBand(1):HFBand(2)));
-        
-        % LF
-        LFBand = [find(SupineIPFM.f>=0.04,1) find(SupineIPFM.f>=0.15,1)];
-        SupineIPFM.lf = trapz(SupineIPFM.f(LFBand(1):LFBand(2)),SupineIPFM.pxx(LFBand(1):LFBand(2)));
-        TiltIPFM.lf = trapz(TiltIPFM.f(LFBand(1):LFBand(2)),TiltIPFM.pxx(LFBand(1):LFBand(2)));
-        
-        % LFn
-        SupineIPFM.lfn = SupineIPFM.lf/(SupineIPFM.lf+SupineIPFM.hf);
-        TiltIPFM.lfn = TiltIPFM.lf/(TiltIPFM.lf+TiltIPFM.hf);
-        
-        % LF/HF
-        SupineIPFM.lfhf = SupineIPFM.lf/SupineIPFM.hf;
-        TiltIPFM.lfhf = TiltIPFM.lf/TiltIPFM.hf;
-
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-        % Save results
-        resultsSupineIPFM{kk,jj} = SupineIPFM;
-        resultsTiltIPFM{kk,jj} = TiltIPFM;
+        resultsSupineIPFM{kk,jj} = freqind(SupineIPFM.pxx,SupineIPFM.f);
+        resultsTiltIPFM{kk,jj} = freqind(TiltIPFM.pxx,TiltIPFM.f);
              
     end
 end
 
-clear SupineECG SupineIPFM TiltECG TiltIPFM jj kk fs nfft overlapSeconds windowSeconds HFBand LFBand
+clear SupineECG SupineIPFM TiltECG TiltIPFM jj kk fs nfft overlapSeconds windowSeconds
 
 %% Degradation results
 
@@ -138,22 +116,22 @@ disp('Measure          Deletion probability (%)');
 fprintf('                 '); fprintf('%i          ',100*deletionProbability(2:end)); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
 
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'lf', true);
+RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'LF', true);
 ylabel('P_{LF} [ms^2]','interpreter','tex')
 fprintf('P_LF (norm)    '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'hf', true);
+RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'HF', true);
 ylabel('P_{HF} [ms^2]','interpreter','tex')
 fprintf('P_HF (norm)    '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'lfn');
+RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'LFn');
 ylabel('P_{LFn}','interpreter','tex')
 fprintf('P_LFn          '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'lfhf');
+RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'LFHF');
 ylabel('P_{LF}/P_{HF}','interpreter','tex')
 fprintf('P_LF/P_HF      '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
 
@@ -170,19 +148,19 @@ disp('Measure          Deletion probability (%)');
 fprintf('                 '); fprintf('%i          ',deletionProbability(2:end)*100); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
 
-significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'lf');
+significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'LF');
 ylabel('P_{LF} [ms^2]','interpreter','tex')
 fprintf('P_LF (norm)    '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
-significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'hf');
+significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'HF');
 ylabel('P_{HF} [ms^2]','interpreter','tex')
 fprintf('P_HF (norm)    '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
-significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'lfn');
+significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'LFn');
 ylabel('P_{LFn}','interpreter','tex')
 fprintf('P_LFn          '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
-significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'lfhf');
+significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'LFHF');
 ylabel('P_{LF}/P_{HF}','interpreter','tex')
 fprintf('P_LF/P_HF      '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')

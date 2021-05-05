@@ -17,7 +17,7 @@ function [Output] = tempind(tm,removeOutliers)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if nargin<2
-    removeOutliers = true;
+    removeOutliers = false;
 end
 
 
