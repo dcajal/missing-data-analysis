@@ -11,8 +11,8 @@ for jj=1:length(deletionProbability)
     end
     significance(jj) = signrank(aux1(:,jj),aux2(:,jj)); %#ok<AGROW>
 end
-fancyBoxplot(aux1,aux2,deletionProbability,significance,true)
-ylabel(index,'interpreter','tex');
+% fancyBoxplot(aux1,aux2,deletionProbability,significance,true)
+% ylabel(index,'interpreter','tex');
 
 end
 

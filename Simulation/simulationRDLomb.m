@@ -10,11 +10,11 @@ overlapSeconds = 30;
 nfft = 2^10;
 
 % subject = {'07M'};
-% subject = {'01M' '02V' '04V' '05V' '06M' '07M' '11M' '13V' '17V'}; % Respiración en banda de HF
-subject = {'01M' '02V' '03V' '04V' '05V' '06M' '07M' '08M' '09M' '11M'...
-    '12V' '13V' '15V' '16V' '17V'};
+subject = {'01M' '02V' '04V' '05V' '06M' '07M' '11M' '13V' '17V'}; % Respiración en banda de HF
+% subject = {'01M' '02V' '03V' '04V' '05V' '06M' '07M' '08M' '09M' '11M'...
+%     '12V' '13V' '15V' '16V' '17V'};
 deletionProbability = 0:0.05:0.25;
-fillGaps = 'iterativeNonLinear'; % 'none' 'incidences' 'iterative' 'iterativeNonLinear'
+fillGaps = 'iterativeNonLinear'; % 'removeOutliers' 'incidences' 'iterative' 'iterativeNonLinear'
 
 resultsSupineLomb = cell(length(subject),length(deletionProbability));
 resultsTiltLomb = cell(length(subject),length(deletionProbability));
@@ -42,7 +42,7 @@ for kk = 1:length(subject)
                 case 'incidences'
                     [~,~,~,SupineECG.tn] = incidences(SupineECG.tk);
                     [~,~,~,TiltECG.tn] = incidences(TiltECG.tk);
-                case 'none'
+                case 'removeOutliers'
                     SupineECG.tn = SupineECG.tk;
                     TiltECG.tn = TiltECG.tk;
             end
@@ -61,7 +61,7 @@ for kk = 1:length(subject)
         SupineLomb.tk = SupineECG.tn(2:end);
 
         % Delete peaks
-        if strcmp(fillGaps,'none')
+        if strcmp(fillGaps,'removeOutliers')
             threshold = computeThreshold(SupineLomb.dtk);
             SupineLomb.tk(SupineLomb.dtk>threshold) = [];
             SupineLomb.dtk(SupineLomb.dtk>threshold) = [];
@@ -84,7 +84,7 @@ for kk = 1:length(subject)
         TiltLomb.tk = TiltECG.tn(2:end);
 
         % Delete peaks
-        if strcmp(fillGaps,'none')
+        if strcmp(fillGaps,'removeOutliers')
             threshold = computeThreshold(TiltLomb.dtk);
             TiltLomb.tk(TiltLomb.dtk>threshold) = [];
             TiltLomb.dtk(TiltLomb.dtk>threshold) = [];
@@ -131,34 +131,34 @@ clear SupineECG SupineLomb TiltECG TiltLomb jj kk fs nfft overlapSeconds windowS
 
 fprintf('\n'); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
-fprintf('Degradation results (RMSE): Frequency indexes (Lomb), random distributed errors, using %s method\n',fillGaps);
+fprintf('Degradation results: Frequency indexes (Lomb), random distributed errors, using %s method\n',fillGaps);
 disp('Measure          Deletion probability (%)');
-fprintf('                 '); fprintf('%i          ',100*deletionProbability(2:end)); fprintf('\n')
+fprintf('                '); fprintf('%i                      ',100*deletionProbability(2:end)); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
 
 
-RMSE = computeError(resultsSupineLomb, resultsTiltLomb, 100*deletionProbability, 'LF', true);
-ylabel('P_{LF} [ms^2]','interpreter','tex')
-fprintf('P_LF (norm)    '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+error = computeError(resultsSupineLomb, resultsTiltLomb, 100*deletionProbability, 'LF');
+% ylabel('P_{LF} [ms^2]','interpreter','tex')
+fprintf('P_LF            '); fprintf('%.2f (%.2f-%.2f)      ',error); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineLomb, resultsTiltLomb, 100*deletionProbability, 'HF', true);
-ylabel('P_{HF} [ms^2]','interpreter','tex')
-fprintf('P_HF (norm)    '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+error = computeError(resultsSupineLomb, resultsTiltLomb, 100*deletionProbability, 'HF');
+% ylabel('P_{HF} [ms^2]','interpreter','tex')
+fprintf('P_HF            '); fprintf('%.2f (%.2f-%.2f)      ',error); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineLomb, resultsTiltLomb, 100*deletionProbability, 'LFn');
-ylabel('P_{LFn}','interpreter','tex')
-fprintf('P_LFn          '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+error = computeError(resultsSupineLomb, resultsTiltLomb, 100*deletionProbability, 'LFn');
+% ylabel('P_{LFn}','interpreter','tex')
+fprintf('P_LFn           '); fprintf('%.2f (%.2f-%.2f)       ',error); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineLomb, resultsTiltLomb, 100*deletionProbability, 'LFHF');
-ylabel('P_{LF}/P_{HF}','interpreter','tex')
-fprintf('P_LF/P_HF      '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+error = computeError(resultsSupineLomb, resultsTiltLomb, 100*deletionProbability, 'LFHF');
+% ylabel('P_{LF}/P_{HF}','interpreter','tex')
+fprintf('P_LF/P_HF       '); fprintf('%.2f (%.2f-%.2f)       ',error); fprintf('\n')
 
 fprintf('---------------------------------------------------------------------------------------\n')
 
-clear RMSE
+clear error
 
 %% Sympathovagal balance results
  
@@ -166,23 +166,23 @@ fprintf('\n'); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
 fprintf('p-values (supine/tilt groups): Frequency indexes (Lomb), random distributed errors, using %s method\n',fillGaps);
 disp('Measure          Deletion probability (%)');
-fprintf('                 '); fprintf('%i          ',deletionProbability(2:end)*100); fprintf('\n')
+fprintf('                '); fprintf('%i          ',deletionProbability(2:end)*100); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
 
 significance = twoGroupsDegradation(resultsSupineLomb, resultsTiltLomb, 100*deletionProbability, 'LF');
-ylabel('P_{LF} [ms^2]','interpreter','tex')
-fprintf('P_LF (norm)    '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
+% ylabel('P_{LF} [ms^2]','interpreter','tex')
+fprintf('P_LF           '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
 significance = twoGroupsDegradation(resultsSupineLomb, resultsTiltLomb, 100*deletionProbability, 'HF');
-ylabel('P_{HF} [ms^2]','interpreter','tex')
-fprintf('P_HF (norm)    '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
+% ylabel('P_{HF} [ms^2]','interpreter','tex')
+fprintf('P_HF           '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
 significance = twoGroupsDegradation(resultsSupineLomb, resultsTiltLomb, 100*deletionProbability, 'LFn');
-ylabel('P_{LFn}','interpreter','tex')
+% ylabel('P_{LFn}','interpreter','tex')
 fprintf('P_LFn          '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
 significance = twoGroupsDegradation(resultsSupineLomb, resultsTiltLomb, 100*deletionProbability, 'LFHF');
-ylabel('P_{LF}/P_{HF}','interpreter','tex')
+% ylabel('P_{LF}/P_{HF}','interpreter','tex')
 fprintf('P_LF/P_HF      '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
 

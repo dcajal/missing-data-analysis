@@ -1,4 +1,4 @@
-function [ p ] = computeTimeCoverage( input, errorThreshold, index )
+function [ output, p ] = computeTimeCoverage( input, errorThreshold, index )
 reference = input(1,:);
 awNoPreproc = input(2,:);
 awRemovingOutliers = input(3,:);
@@ -12,13 +12,24 @@ noPreprocCorrects = zeros(nCases,numel(errorThreshold));
 removingOutliersCorrects = zeros(nCases,numel(errorThreshold));
 incidencesCorrects = zeros(nCases,numel(errorThreshold));
 iterativeCorrects = zeros(nCases,numel(errorThreshold));
-iterativeCorrectsNL = zeros(nCases,numel(errorThreshold));
+iterativeNLCorrects = zeros(nCases,numel(errorThreshold));
+noPreprocError = zeros(nCases,1);
+removingOutliersError = zeros(nCases,1);
+incidencesError = zeros(nCases,1);
+iterativeError = zeros(nCases,1);
+iterativeNLError = zeros(nCases,1);
 for kk=1:nCases
     noPreprocCorrects(kk,:) = abs((awNoPreproc{kk}.(index) - reference{kk}.(index))/reference{kk}.(index))<errorThreshold;
     removingOutliersCorrects(kk,:) = abs((awRemovingOutliers{kk}.(index) - reference{kk}.(index))/reference{kk}.(index))<errorThreshold;
     incidencesCorrects(kk,:) = abs((awIncidences{kk}.(index) - reference{kk}.(index))/reference{kk}.(index))<errorThreshold;
     iterativeCorrects(kk,:) = abs((awIterative{kk}.(index) - reference{kk}.(index))/reference{kk}.(index))<errorThreshold;
-    iterativeCorrectsNL(kk,:) = abs((awIterativeNL{kk}.(index) - reference{kk}.(index))/reference{kk}.(index))<errorThreshold;
+    iterativeNLCorrects(kk,:) = abs((awIterativeNL{kk}.(index) - reference{kk}.(index))/reference{kk}.(index))<errorThreshold;
+    
+    noPreprocError(kk) = abs(awNoPreproc{kk}.(index) - reference{kk}.(index));
+    removingOutliersError(kk) = abs(awRemovingOutliers{kk}.(index) - reference{kk}.(index));
+    incidencesError(kk) = abs(awIncidences{kk}.(index) - reference{kk}.(index));
+    iterativeError(kk) = abs(awIterative{kk}.(index) - reference{kk}.(index));
+    iterativeNLError(kk) = abs(awIterativeNL{kk}.(index) - reference{kk}.(index));
 end
 
 if numel(errorThreshold) > 1
@@ -27,7 +38,7 @@ if numel(errorThreshold) > 1
     p(2) = plot(errorThreshold*100,100*sum(removingOutliersCorrects,1)/nCases,'--');
     p(3) = plot(errorThreshold*100,100*sum(incidencesCorrects,1)/nCases,'-*');
     p(4) = plot(errorThreshold*100,100*sum(iterativeCorrects,1)/nCases,'-^');
-    p(5) = plot(errorThreshold*100,100*sum(iterativeCorrectsNL,1)/nCases,'-o');
+    p(5) = plot(errorThreshold*100,100*sum(iterativeNLCorrects,1)/nCases,'-o');
     title(index); xlabel('Permited error (%)','interpreter','tex'); ylabel('Correct cases (%)','interpreter','tex')
 else
     fprintf('\n');
@@ -38,7 +49,7 @@ else
     fprintf('Removing outliers coverage: %i out of %i (%.2f%%)\n',sum(removingOutliersCorrects),nCases,sum(removingOutliersCorrects)/nCases*100);
     fprintf('Incidences coverage: %i out of %i (%.2f%%)\n',sum(incidencesCorrects),nCases,sum(incidencesCorrects)/nCases*100);
     fprintf('Iterative coverage: %i out of %i (%.2f%%)\n',sum(iterativeCorrects),nCases,sum(iterativeCorrects)/nCases*100);
-    fprintf('Iterative NL coverage: %i out of %i (%.2f%%)\n',sum(iterativeCorrectsNL),nCases,sum(iterativeCorrectsNL)/nCases*100);
+    fprintf('Iterative NL coverage: %i out of %i (%.2f%%)\n',sum(iterativeNLCorrects),nCases,sum(iterativeNLCorrects)/nCases*100);
     fprintf('----------------------------------------\n');
     fprintf('Iterative coverage on incidences failures: %i out of %i (%.2f%%)\n',sum(iterativeCorrects(~incidencesCorrects)),sum(~incidencesCorrects),sum(iterativeCorrects(~incidencesCorrects))/sum(~incidencesCorrects)*100);
     fprintf('Iterative coverage on removing outliers failures: %i out of %i (%.2f%%)\n',sum(iterativeCorrects(~removingOutliersCorrects)),sum(~removingOutliersCorrects),sum(iterativeCorrects(~removingOutliersCorrects))/sum(~removingOutliersCorrects)*100);
@@ -56,11 +67,41 @@ else
     patch([0 nCases+1 nCases+1 0],[0 0 2 2],[1 1 1]);
     p(4) = bar(1:nCases,iterativeCorrects*2,'r');
     patch([0 nCases+1 nCases+1 0],[0 0 1 1],[1 1 1]);
-    p(5) = bar(1:nCases,iterativeCorrectsNL,'y');
+    p(5) = bar(1:nCases,iterativeNLCorrects,'y');
     yticks([]);
     title(index); xlabel('Case'); ylabel('Is correct'); axis tight; set(gcf,'position',[0,0,2000,1000]);
 end
     legend(p,'No Prep','Removing Outliers','Incidences','Iterative','Iterative NL','Location','bestoutside');
+    
+    
+    % Error
+    output = [];
+    
+    errorMedian = prctile(noPreprocError,50);
+    firstQuartile = prctile(noPreprocError,25);
+    thirdQuartile = prctile(noPreprocError,75);
+    output = [output errorMedian firstQuartile thirdQuartile];
+    
+    errorMedian = prctile(removingOutliersError,50);
+    firstQuartile = prctile(removingOutliersError,25);
+    thirdQuartile = prctile(removingOutliersError,75);
+    output = [output errorMedian firstQuartile thirdQuartile];
+
+    errorMedian = prctile(incidencesError,50);
+    firstQuartile = prctile(incidencesError,25);
+    thirdQuartile = prctile(incidencesError,75);
+    output = [output errorMedian firstQuartile thirdQuartile];
+
+    errorMedian = prctile(iterativeError,50);
+    firstQuartile = prctile(iterativeError,25);
+    thirdQuartile = prctile(iterativeError,75);
+    output = [output errorMedian firstQuartile thirdQuartile];
+
+    errorMedian = prctile(iterativeNLError,50);
+    firstQuartile = prctile(iterativeNLError,25);
+    thirdQuartile = prctile(iterativeNLError,75);
+    output = [output errorMedian firstQuartile thirdQuartile];
+
 
 end
 

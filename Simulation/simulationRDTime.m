@@ -7,7 +7,7 @@ figurePresets
 subject = {'01M' '02V' '03V' '04V' '05V' '06M' '07M' '08M' '09M' '11M'...
     '12V' '13V' '15V' '16V' '17V'};
 deletionProbability = 0:0.05:0.25;
-fillGaps = 'iterativeNonLinear'; % 'none' 'incidences' 'iterative' 'iterativeNonLinear'
+fillGaps = 'removeOutliers'; % 'noPreproc' 'removeOutliers' 'incidences' 'iterative' 'iterativeNonLinear'
 detectGaps = false; % Only with fillGaps = 'none' (remove outliers)
 
 resultsSupineTDP = cell(length(subject),length(deletionProbability));
@@ -36,9 +36,13 @@ for kk = 1:length(subject)
                 case 'incidences'
                     [~,~,~,SupineECG.tn] = incidences(SupineECG.tk);
                     [~,~,~,TiltECG.tn] = incidences(TiltECG.tk);
-                case 'none'
+                case 'noPreproc'
                     SupineECG.tn = SupineECG.tk;
                     TiltECG.tn = TiltECG.tk;
+                case 'removeOutliers'
+                    SupineECG.tn = SupineECG.tk;
+                    TiltECG.tn = TiltECG.tk;
+                    detectGaps = true;
             end
         else
             SupineECG.tn = SupineECG.tk;
@@ -66,34 +70,33 @@ clear SupineECG SupineTDP TiltECG TiltTDP jj kk
 
 fprintf('\n'); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
-fprintf('Degradation results (RMSE): Time indexes, random distributed errors, using %s method\n',fillGaps);
+fprintf('Degradation results: Time indexes, random distributed errors, using %s method\n',fillGaps);
 disp('Measure          Deletion probability (%)');
-fprintf('                 '); fprintf('%i          ',100*deletionProbability(2:end)); fprintf('\n')
+fprintf('                 '); fprintf('%i                     ',100*deletionProbability(2:end)); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
 
-RMSE = computeError(resultsSupineTDP, resultsTiltTDP, 100*deletionProbability, 'MHR');
-ylabel('MHR [beats/min]','interpreter','tex')
-fprintf('MHR              '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+error = computeError(resultsSupineTDP, resultsTiltTDP, 100*deletionProbability, 'MHR');
+% ylabel('MHR [beats/min]','interpreter','tex')
+fprintf('MHR             '); fprintf('%.2f (%.2f-%.2f)       ',error); fprintf('\n')
 
-RMSE = computeError(resultsSupineTDP, resultsTiltTDP, 100*deletionProbability, 'SDNN');
-ylabel('SDNN [ms]','interpreter','tex')
-fprintf('SDNN             '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+error = computeError(resultsSupineTDP, resultsTiltTDP, 100*deletionProbability, 'SDNN');
+% ylabel('SDNN [ms]','interpreter','tex')
+fprintf('SDNN            '); fprintf('%.2f (%.2f-%.2f)       ',error); fprintf('\n')
 
-RMSE = computeError(resultsSupineTDP, resultsTiltTDP, 100*deletionProbability, 'SDSD');
-ylabel('SDSD [ms]','interpreter','tex')
-fprintf('SDSD             '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+error = computeError(resultsSupineTDP, resultsTiltTDP, 100*deletionProbability, 'SDSD');
+% ylabel('SDSD [ms]','interpreter','tex')
+fprintf('SDSD            '); fprintf('%.2f (%.2f-%.2f)       ',error); fprintf('\n')
 
-RMSE = computeError(resultsSupineTDP, resultsTiltTDP, 100*deletionProbability, 'RMSSD');
-ylabel('RMSSD [ms]','interpreter','tex')
-fprintf('RMSSD            '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+% error = computeError(resultsSupineTDP, resultsTiltTDP, 100*deletionProbability, 'RMSSD');
+% % ylabel('RMSSD [ms]','interpreter','tex')
+% fprintf('RMSSD            '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
 
-RMSE = computeError(resultsSupineTDP, resultsTiltTDP, 100*deletionProbability, 'pNN50');
-ylabel('pNN50 [%]','interpreter','tex')
-fprintf('pNN50            '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+error = computeError(resultsSupineTDP, resultsTiltTDP, 100*deletionProbability, 'pNN50');
+% ylabel('pNN50 [%]','interpreter','tex')
+fprintf('pNN50           '); fprintf('%.2f (%.2f-%.2f)       ',error); fprintf('\n')
 
 fprintf('---------------------------------------------------------------------------------------\n')
 
-clear RMSE
 
 %% Sympathovagal balance results
  
@@ -116,9 +119,9 @@ significance = twoGroupsDegradation(resultsSupineTDP, resultsTiltTDP, 100*deleti
 ylabel('SDSD [ms]','interpreter','tex')
 fprintf('SDSD             '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
-significance = twoGroupsDegradation(resultsSupineTDP, resultsTiltTDP, 100*deletionProbability, 'RMSSD');
-ylabel('RMSSD [ms]','interpreter','tex')
-fprintf('RMSSD            '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
+% significance = twoGroupsDegradation(resultsSupineTDP, resultsTiltTDP, 100*deletionProbability, 'RMSSD');
+% ylabel('RMSSD [ms]','interpreter','tex')
+% fprintf('RMSSD            '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
 significance = twoGroupsDegradation(resultsSupineTDP, resultsTiltTDP, 100*deletionProbability, 'pNN50');
 ylabel('pNN50 [%]','interpreter','tex')

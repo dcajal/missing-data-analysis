@@ -42,14 +42,14 @@ for kk = 1:length(files)
             dReferenceSegment = detrend(dReferenceSegment);
             psdReference = plombav(referenceSegment(2:end),dReferenceSegment,f,wdw,noverlap);
             
-            % Apple Watch none
+            % Apple Watch remove outliers
             dAw = diff(awSegment);
             threshold = computeThreshold(dAw);
             awSegment(dAw>threshold) = [];
             dAw(dAw>threshold) = [];
             dAw = 1000.*dAw;
             dAw = detrend(dAw);
-            psdAwNone = plombav(awSegment(2:end),dAw,f,wdw,noverlap);
+            psdAwRemoveOutliers = plombav(awSegment(2:end),dAw,f,wdw,noverlap);
             
             % Apple Watch incidences
             [~,~,~,tnAwIncidences] = incidences(awSegment);
@@ -75,7 +75,7 @@ for kk = 1:length(files)
             [bb, aa] = butter(15, 0.04*2, 'high');
             h = freqz(bb,aa,nfft);
             psdReference = psdReference.*abs(h);
-            psdAwNone = psdAwNone.*abs(h);
+            psdAwRemoveOutliers = psdAwRemoveOutliers.*abs(h);
             psdAwIncidences = psdAwIncidences.*abs(h);
             psdAwIterative = psdAwIterative.*abs(h);
             psdAwIterativeNL = psdAwIterativeNL.*abs(h);
@@ -83,7 +83,7 @@ for kk = 1:length(files)
             
               
             reference{saveIndex} = freqind(psdReference, f); %#ok<*SAGROW>
-            awNone{saveIndex} = freqind(psdAwNone, f); %#ok<*SAGROW>
+            awRemoveOutliers{saveIndex} = freqind(psdAwRemoveOutliers, f); %#ok<*SAGROW>
             awIncidences{saveIndex} = freqind(psdAwIncidences, f); %#ok<*SAGROW>
             awIterative{saveIndex} = freqind(psdAwIterative, f); %#ok<*SAGROW>
             awIterativeNL{saveIndex} = freqind(psdAwIterativeNL, f); %#ok<*SAGROW>
@@ -111,7 +111,7 @@ for kk = 1:length(files)
             dAw(dAw>threshold) = [];
             dAw = 1000.*dAw;
             dAw = detrend(dAw);
-            psdAwNone = plombav(awSegment(2:end),dAw,f,wdw,noverlap);
+            psdAwRemoveOutliers = plombav(awSegment(2:end),dAw,f,wdw,noverlap);
             
             % Apple Watch incidences
             [~,~,~,tnAwIncidences] = incidences(awSegment);
@@ -137,7 +137,7 @@ for kk = 1:length(files)
             [bb, aa] = butter(15, 0.04*2, 'high');
             h = freqz(bb,aa,nfft);
             psdReference = psdReference.*abs(h);
-            psdAwNone = psdAwNone.*abs(h);
+            psdAwRemoveOutliers = psdAwRemoveOutliers.*abs(h);
             psdAwIncidences = psdAwIncidences.*abs(h);
             psdAwIterative = psdAwIterative.*abs(h);
             psdAwIterativeNL = psdAwIterativeNL.*abs(h);
@@ -145,7 +145,7 @@ for kk = 1:length(files)
             
               
             reference{saveIndex} = freqind(psdReference, f); %#ok<*SAGROW>
-            awNone{saveIndex} = freqind(psdAwNone, f); %#ok<*SAGROW>
+            awRemoveOutliers{saveIndex} = freqind(psdAwRemoveOutliers, f); %#ok<*SAGROW>
             awIncidences{saveIndex} = freqind(psdAwIncidences, f); %#ok<*SAGROW>
             awIterative{saveIndex} = freqind(psdAwIterative, f); %#ok<*SAGROW>
             awIterativeNL{saveIndex} = freqind(psdAwIterativeNL, f); %#ok<*SAGROW>
@@ -157,7 +157,7 @@ for kk = 1:length(files)
     end
 end
 
-results = [reference; awNone; awIncidences; awIterative; awIterativeNL];
+results = [reference; awRemoveOutliers; awIncidences; awIterative; awIterativeNL];
 
 
 %             figure;
@@ -183,7 +183,21 @@ results = [reference; awNone; awIncidences; awIterative; awIterativeNL];
 errorThreshold = 0.001:0.001:0.3;
 % errorThreshold = 0.01;
 
-computeLombCoverage(results, errorThreshold, 'HF');
-computeLombCoverage(results, errorThreshold, 'LF');
-computeLombCoverage(results, errorThreshold, 'LFn');
-computeLombCoverage(results, errorThreshold, 'LFHF');
+fprintf('\n'); fprintf('\n')
+fprintf('---------------------------------------------------------------------------------------\n')
+fprintf('Absolute error: Freq indexes (Lomb), AW\n');
+disp('Measure          Method');
+fprintf('                 Remove outliers            Incidences            Iterative            Iterative NL\n');
+fprintf('---------------------------------------------------------------------------------------\n')
+
+error = computeLombCoverage(results, errorThreshold, 'LF');
+fprintf('LF              '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
+
+error = computeLombCoverage(results, errorThreshold, 'HF');
+fprintf('HF              '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
+
+error = computeLombCoverage(results, errorThreshold, 'LFn');
+fprintf('LFn              '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
+
+error = computeLombCoverage(results, errorThreshold, 'LFHF');
+fprintf('LFHF              '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')

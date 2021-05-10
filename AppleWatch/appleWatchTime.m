@@ -108,12 +108,29 @@ results = [reference; awNoPreproc; awRemovingOutliers; awIncidences; awIterative
 
 %% Results
 
-errorThreshold = 0.001:0.001:0.1;
+errorThreshold = 0.001:0.001:0.25;
 % errorThreshold = 0.01;
 
-computeTimeCoverage(results, errorThreshold, 'MHR');
-computeTimeCoverage(results, errorThreshold, 'SDNN');
-computeTimeCoverage(results, errorThreshold, 'SDSD');
-computeTimeCoverage(results, errorThreshold, 'RMSSD');
-computeTimeCoverage(results, errorThreshold, 'pNN50');
+fprintf('\n'); fprintf('\n')
+fprintf('---------------------------------------------------------------------------------------\n')
+fprintf('Absolute error: Time indexes, AW\n');
+disp('Measure          Method');
+fprintf('                 No preproc            Removing outliers            Incidences            Iterative            Iterative NL\n');
+fprintf('---------------------------------------------------------------------------------------\n')
+
+error = computeTimeCoverage(results, errorThreshold, 'MHR');
+fprintf('MHR              '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
+
+error = computeTimeCoverage(results, errorThreshold, 'SDNN');
+fprintf('SDNN             '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
+
+error = computeTimeCoverage(results, errorThreshold, 'SDSD');
+fprintf('SDSD             '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
+
+% error = computeTimeCoverage(results, errorThreshold, 'RMSSD');
+% fprintf('RMSSD            '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
+
+error = computeTimeCoverage(results, errorThreshold, 'pNN50');
+fprintf('pNN50            '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
+
 

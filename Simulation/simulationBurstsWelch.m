@@ -11,9 +11,9 @@ nfft = 2^10;
 fs = 4;
 
 % subject = {'07M'};
-% subject = {'01M' '02V' '04V' '05V' '06M' '07M' '11M' '13V' '17V'}; % Respiración en banda de HF
-subject = {'01M' '02V' '03V' '04V' '05V' '06M' '07M' '08M' '09M' '11M'...
-    '12V' '13V' '15V' '16V' '17V'};
+subject = {'01M' '02V' '04V' '05V' '06M' '07M' '11M' '13V' '17V'}; % Respiración en banda de HF
+% subject = {'01M' '02V' '03V' '04V' '05V' '06M' '07M' '08M' '09M' '11M'...
+%     '12V' '13V' '15V' '16V' '17V'};
 burstDuration = [0 10 20 30 40 50 60];
 fillGaps = 'iterativeNonLinear'; % 'ipfm' 'incidences' 'iterative' 'iterativeNonLinear'
 
@@ -113,63 +113,56 @@ clear SupineECG SupineIPFM TiltECG TiltIPFM jj kk fs nfft overlapSeconds windowS
 
 fprintf('\n'); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
-fprintf('Degradation results (RMSE): Frequency indexes (Welch), error bursts, using %s method\n',fillGaps);
+fprintf('Degradation results: Frequency indexes (Welch), error bursts, using %s method\n',fillGaps);
 disp('Measure          Burst duration (seconds)');
-fprintf('                 '); fprintf('%i          ',burstDuration(2:end)); fprintf('\n')
+fprintf('                 '); fprintf('%i                   ',burstDuration(2:end)); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
 
-
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'LF', true);
-xlabel('Burst duration (s)','interpreter','tex')
-ylabel('P_{LF} [ms^2]','interpreter','tex');
-fprintf('P_LF (norm)    '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+error = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'LF');
+% ylabel('P_{LF} [ms^2]','interpreter','tex')
+fprintf('P_LF           '); fprintf('%.2f (%.2f-%.2f)       ',error); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'HF', true);
-xlabel('Burst duration (s)','interpreter','tex')
-ylabel('P_{HF} [ms^2]','interpreter','tex')
-fprintf('P_HF (norm)    '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+error = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'HF');
+% ylabel('P_{HF} [ms^2]','interpreter','tex')
+fprintf('P_HF           '); fprintf('%.2f (%.2f-%.2f)       ',error); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'LFn');
-xlabel('Burst duration (s)','interpreter','tex')
-ylabel('P_{LFn}','interpreter','tex')
-fprintf('P_LFn          '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+error = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'LFn');
+% ylabel('P_{LFn}','interpreter','tex')
+fprintf('P_LFn          '); fprintf('%.2f (%.2f-%.2f)       ',error); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'LFHF');
-xlabel('Burst duration (s)','interpreter','tex')
-ylabel('P_{LF}/P_{HF}','interpreter','tex')
-fprintf('P_LF/P_HF      '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
-
+error = computeError(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'LFHF');
+% ylabel('P_{LF}/P_{HF}','interpreter','tex')
+fprintf('P_LF/P_HF      '); fprintf('%.2f (%.2f-%.2f)       ',error); fprintf('\n')
 
 fprintf('---------------------------------------------------------------------------------------\n')
 
-clear RMSE
-
+clear error
 %% Sympathovagal balance results
  
 fprintf('\n'); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
-fprintf('p-values (supine/tilt groups): Frequency indexes (Welch), random distributed errors, using %s method\n',fillGaps);
+fprintf('p-values (supine/tilt groups): Frequency indexes (Welch), error bursts, using %s method\n',fillGaps);
 disp('Measure          Deletion probability (%)');
 fprintf('                 '); fprintf('%i          ',burstDuration); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
 
 significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'LF');
-ylabel('P_{LF} [ms^2]','interpreter','tex')
-fprintf('P_LF (norm)    '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
+% ylabel('P_{LF} [ms^2]','interpreter','tex')
+fprintf('P_LF           '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
 significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'HF');
-ylabel('P_{HF} [ms^2]','interpreter','tex')
-fprintf('P_HF (norm)    '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
+% ylabel('P_{HF} [ms^2]','interpreter','tex')
+fprintf('P_HF           '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
 significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'LFn');
-ylabel('P_{LFn}','interpreter','tex')
+% ylabel('P_{LFn}','interpreter','tex')
 fprintf('P_LFn          '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
 significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, burstDuration, 'LFHF');
-ylabel('P_{LF}/P_{HF}','interpreter','tex')
+% ylabel('P_{LF}/P_{HF}','interpreter','tex')
 fprintf('P_LF/P_HF      '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
 

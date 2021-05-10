@@ -1,4 +1,4 @@
-function [ p ] = computeWelchCoverage( input, errorThreshold, index )
+function [ output, p ] = computeWelchCoverage( input, errorThreshold, index )
 reference = input(1,:);
 awIpfm = input(2,:);
 awIncidences = input(3,:);
@@ -11,11 +11,20 @@ ipfmCorrects = zeros(nCases,numel(errorThreshold));
 incidencesCorrects = zeros(nCases,numel(errorThreshold));
 iterativeCorrects = zeros(nCases,numel(errorThreshold));
 iterativeCorrectsNL = zeros(nCases,numel(errorThreshold));
+ipfmError = zeros(nCases,1);
+incidencesError = zeros(nCases,1);
+iterativeError = zeros(nCases,1);
+iterativeNLError = zeros(nCases,1);
 for kk=1:nCases
     ipfmCorrects(kk,:) = abs((awIpfm{kk}.(index) - reference{kk}.(index))/reference{kk}.(index))<errorThreshold;
     incidencesCorrects(kk,:) = abs((awIncidences{kk}.(index) - reference{kk}.(index))/reference{kk}.(index))<errorThreshold;
     iterativeCorrects(kk,:) = abs((awIterative{kk}.(index) - reference{kk}.(index))/reference{kk}.(index))<errorThreshold;
     iterativeCorrectsNL(kk,:) = abs((awIterativeNL{kk}.(index) - reference{kk}.(index))/reference{kk}.(index))<errorThreshold;
+    
+    ipfmError(kk) = abs(awIpfm{kk}.(index) - reference{kk}.(index));
+    incidencesError(kk) = abs(awIncidences{kk}.(index) - reference{kk}.(index));
+    iterativeError(kk) = abs(awIterative{kk}.(index) - reference{kk}.(index));
+    iterativeNLError(kk) = abs(awIterativeNL{kk}.(index) - reference{kk}.(index));
 end
 
 if numel(errorThreshold) > 1
@@ -54,6 +63,29 @@ else
     title(index); xlabel('Case'); ylabel('Is correct'); axis tight; set(gcf,'position',[0,0,2000,1000]);
 end
     legend(p,'IPFM','Incidences','Iterative','Iterative NL','Location','bestoutside');
+    
+    % Error
+    output = [];
+    
+    errorMedian = prctile(ipfmError,50);
+    firstQuartile = prctile(ipfmError,25);
+    thirdQuartile = prctile(ipfmError,75);
+    output = [output errorMedian firstQuartile thirdQuartile];
+
+    errorMedian = prctile(incidencesError,50);
+    firstQuartile = prctile(incidencesError,25);
+    thirdQuartile = prctile(incidencesError,75);
+    output = [output errorMedian firstQuartile thirdQuartile];
+
+    errorMedian = prctile(iterativeError,50);
+    firstQuartile = prctile(iterativeError,25);
+    thirdQuartile = prctile(iterativeError,75);
+    output = [output errorMedian firstQuartile thirdQuartile];
+
+    errorMedian = prctile(iterativeNLError,50);
+    firstQuartile = prctile(iterativeNLError,25);
+    thirdQuartile = prctile(iterativeNLError,75);
+    output = [output errorMedian firstQuartile thirdQuartile];
 
 end
 

@@ -1,4 +1,5 @@
-function [ output ] = computeError( resultsSupine, resultsTilt, deletionProbability, index)
+function [ RMSE ] = computeRMSE( resultsSupine, resultsTilt, deletionProbability, index, normalize)
+if nargin < 5, normalize = false; end
 
 nsubjects = size(resultsSupine,1);
 
@@ -15,17 +16,13 @@ for jj=1:length(deletionProbability)
 end
 aux2 = repmat(aux1(:,1),1,length(deletionProbability));
 aux1(:,1) = nan;
-% fancyBoxplot(aux2,aux1,deletionProbability,significance)
-% ylabel(index,'interpreter','tex');
+fancyBoxplot(aux2,aux1,deletionProbability,significance)
+ylabel(index,'interpreter','tex');
 
-error = abs(aux2-aux1);
-errorMedian = prctile(error,50);
-firstQuartile = prctile(error,25);
-thirdQuartile = prctile(error,75);
-
-output = [];
-for kk = 2:length(deletionProbability)
-   output = [output errorMedian(kk) firstQuartile(kk) thirdQuartile(kk)];
+if normalize
+    RMSE = sqrt(nansum((aux2-aux1).^2,1)./(2*nsubjects))./nanmean(aux2(:,1)); % nRMSE
+else
+    RMSE = sqrt(nansum((aux2-aux1).^2,1)./(2*nsubjects)); % RMSE
 end
 
 end

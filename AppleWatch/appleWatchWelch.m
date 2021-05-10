@@ -163,8 +163,23 @@ results = [reference; awIpfm; awIncidences; awIterative; awIterativeNL];
 errorThreshold = 0.001:0.001:0.3;
 % errorThreshold = 0.01;
 
-computeWelchCoverage(results, errorThreshold, 'HF');
-computeWelchCoverage(results, errorThreshold, 'LF');
-computeWelchCoverage(results, errorThreshold, 'LFn');
-computeWelchCoverage(results, errorThreshold, 'LFHF');
+fprintf('\n'); fprintf('\n')
+fprintf('---------------------------------------------------------------------------------------\n')
+fprintf('Absolute error: Freq indexes (Welch), AW\n');
+disp('Measure          Method');
+fprintf('                 IPFM            Incidences            Iterative            Iterative NL\n');
+fprintf('---------------------------------------------------------------------------------------\n')
+
+error = computeWelchCoverage(results, errorThreshold, 'LF');
+fprintf('LF              '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
+
+error = computeWelchCoverage(results, errorThreshold, 'HF');
+fprintf('HF              '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
+
+error = computeWelchCoverage(results, errorThreshold, 'LFn');
+fprintf('LFn              '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
+
+error = computeWelchCoverage(results, errorThreshold, 'LFHF');
+fprintf('LFHF              '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
+
 

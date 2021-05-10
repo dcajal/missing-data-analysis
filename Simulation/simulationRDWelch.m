@@ -11,9 +11,9 @@ nfft = 2^10;
 fs = 4;
 
 % subject = {'10V'};
-% subject = {'01M' '02V' '04V' '05V' '06M' '07M' '11M' '13V' '17V'}; % Respiración en banda de HF
-subject = {'01M' '02V' '03V' '04V' '05V' '06M' '07M' '08M' '09M' '10V' '11M'...
-    '12V' '13V' '15V' '16V' '17V'};
+subject = {'01M' '02V' '04V' '05V' '06M' '07M' '11M' '13V' '17V'}; % Respiración en banda de HF
+% subject = {'01M' '02V' '03V' '04V' '05V' '06M' '07M' '08M' '09M' '10V' '11M'...
+%     '12V' '13V' '15V' '16V' '17V'};
 deletionProbability = 0:0.05:0.25;
 fillGaps = 'iterativeNonLinear'; % 'ipfm' 'incidences' 'iterative' 'iterativeNonLinear'
 
@@ -111,33 +111,33 @@ clear SupineECG SupineIPFM TiltECG TiltIPFM jj kk fs nfft overlapSeconds windowS
 
 fprintf('\n'); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
-fprintf('Degradation results (RMSE): Frequency indexes (Welch), random distributed errors, using %s method\n',fillGaps);
+fprintf('Degradation results: Frequency indexes (Welch), random distributed errors, using %s method\n',fillGaps);
 disp('Measure          Deletion probability (%)');
 fprintf('                 '); fprintf('%i          ',100*deletionProbability(2:end)); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
 
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'LF', true);
-ylabel('P_{LF} [ms^2]','interpreter','tex')
-fprintf('P_LF (norm)    '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+error = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'LF');
+% ylabel('P_{LF} [ms^2]','interpreter','tex')
+fprintf('P_LF           '); fprintf('%.2f (%.2f-%.2f)       ',error); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'HF', true);
-ylabel('P_{HF} [ms^2]','interpreter','tex')
-fprintf('P_HF (norm)    '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+error = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'HF');
+% ylabel('P_{HF} [ms^2]','interpreter','tex')
+fprintf('P_HF           '); fprintf('%.2f (%.2f-%.2f)       ',error); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'LFn');
-ylabel('P_{LFn}','interpreter','tex')
-fprintf('P_LFn          '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+error = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'LFn');
+% ylabel('P_{LFn}','interpreter','tex')
+fprintf('P_LFn          '); fprintf('%.2f (%.2f-%.2f)       ',error); fprintf('\n')
 
 
-RMSE = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'LFHF');
-ylabel('P_{LF}/P_{HF}','interpreter','tex')
-fprintf('P_LF/P_HF      '); fprintf('%.3f       ',RMSE(2:end)); fprintf('\n')
+error = computeError(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'LFHF');
+% ylabel('P_{LF}/P_{HF}','interpreter','tex')
+fprintf('P_LF/P_HF      '); fprintf('%.2f (%.2f-%.2f)       ',error); fprintf('\n')
 
 fprintf('---------------------------------------------------------------------------------------\n')
 
-clear RMSE
+clear error
 
 %% Sympathovagal balance results
  
@@ -149,19 +149,19 @@ fprintf('                 '); fprintf('%i          ',deletionProbability(2:end)*
 fprintf('---------------------------------------------------------------------------------------\n')
 
 significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'LF');
-ylabel('P_{LF} [ms^2]','interpreter','tex')
-fprintf('P_LF (norm)    '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
+% ylabel('P_{LF} [ms^2]','interpreter','tex')
+fprintf('P_LF           '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
 significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'HF');
-ylabel('P_{HF} [ms^2]','interpreter','tex')
-fprintf('P_HF (norm)    '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
+% ylabel('P_{HF} [ms^2]','interpreter','tex')
+fprintf('P_HF           '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
 significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'LFn');
-ylabel('P_{LFn}','interpreter','tex')
+% ylabel('P_{LFn}','interpreter','tex')
 fprintf('P_LFn          '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 
 significance = twoGroupsDegradation(resultsSupineIPFM, resultsTiltIPFM, 100*deletionProbability, 'LFHF');
-ylabel('P_{LF}/P_{HF}','interpreter','tex')
+% ylabel('P_{LF}/P_{HF}','interpreter','tex')
 fprintf('P_LF/P_HF      '); fprintf('%.3f       ',significance(2:end)); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
 
