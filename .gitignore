@@ -1,6 +1,7 @@
 *.mat
 *.docx
 *.pdf
+*.jpg
 
 # Windows default autosave extension
 *.asv

@@ -1,9 +1,9 @@
-function tn = gapcorrectorNonLinear( tk,debug )
+function tn = gapcorrectorNonLinearFigures( tk,debug )
     %GAPCORRECTORNONLINEAR Detect and fill gaps in pulse series by interpolation
     warning('off', 'MATLAB:interp1:NaNstrip')
     
     % Threshold multipliers for upper and lower thresholds
-    kupper = 1.4/1.5;%0.7;
+    kupper = 0.9;
     klower = 0.6;
     
     if nargin < 2
@@ -13,11 +13,10 @@ function tn = gapcorrectorNonLinear( tk,debug )
     tk = tk(:);
     tn = tk;
     dtk = diff(tk);
-    dtn = dtk;
     
     % Gaps are detected by deviation from the median in difference series
     threshold = computeThreshold(dtk);
-    gaps = find(dtk>threshold & dtk>0.5);
+    gaps = find(dtk>threshold);
     if isempty(gaps), return; end
     thresholdAtGap = threshold(gaps);
     
@@ -38,30 +37,27 @@ function tn = gapcorrectorNonLinear( tk,debug )
     end
      
     if debug
-        f = set(gcf, 'Position', get(0, 'Screensize'));
+        f = set(gcf,'position',[500,0,800,800]); box off;
+%         subplot(211);
+        stem(dtk); hold on;
+        stem(gaps,dtk(gaps),'r');
+        hold on
+        plot(threshold,'k--')
+        axis tight
+        ylim([0 3.5])
+        ylabel('Original RR [s]')
+        set(gcf,'position',[500,300,800,500]); box off
     end
     
     nfill = 1; % Start filling with one sample
     while ~isempty(gaps)
         % In each iteration, try to fill with one more sample
         for kk = 1:length(gaps)
-            if kk==1 && debug
-                subplot(211);
-                hold off
-                stem(dtn); hold on;
-                stem(gaps,dtn(gaps),'r');
-                hold on
-                plot(threshold,'k--')
-                axis tight
-                ylabel('Original RR [s]')
-            end
-            
             auxtn = nfillgap(tn,gaps,gaps(kk),nfill);
             auxdtn = diff(auxtn);
             
             correct = auxdtn(gaps(kk):gaps(kk)+nfill)<kupper*thresholdAtGap(kk);
-            limitExceeded = auxdtn(gaps(kk):gaps(kk)+nfill)<klower*thresholdAtGap(kk) | ...
-                auxdtn(gaps(kk):gaps(kk)+nfill)<0.5;
+            limitExceeded = auxdtn(gaps(kk):gaps(kk)+nfill)<klower*thresholdAtGap(kk);
             
             if debug
                 if limitExceeded
@@ -90,7 +86,7 @@ function tn = gapcorrectorNonLinear( tk,debug )
         % Compute gaps for next iteration
         dtn = diff(tn);
         threshold = computeThreshold(dtn);
-        gaps = find(dtn>threshold & dtn>0.5);
+        gaps = find(dtn>threshold);
         thresholdAtGap = threshold(gaps);
         nfill = nfill+1;
     end
@@ -111,12 +107,13 @@ function tn = nfillgap(tk,gaps,currentGap,nfill)
 %     intervals = interp1([1 nfill+3],[intPre intPost],2:nfill+2,'linear');
 %     intervals = intervals(1:end-1)*gap/(sum(intervals)); % map intervals to gap
 
+    w = 5; % Number of samples to interpolate
     dtk = diff(tk);
     gaps(gaps==currentGap) = [];
     dtk(gaps) = nan;
     gap = dtk(currentGap);
-    previousIntervals = dtk(max(1,currentGap-20):currentGap-1);
-    posteriorIntervals = dtk(currentGap+1:min(end,currentGap+20));
+    previousIntervals = dtk(max(1,currentGap-w):currentGap-1);
+    posteriorIntervals = dtk(currentGap+1:min(end,currentGap+w));
     npre = numel(previousIntervals);
     npos = numel(posteriorIntervals);
     intervals = interp1([1:npre nfill+npre+2:nfill+npre+npos+1],[previousIntervals; posteriorIntervals],...
@@ -126,18 +123,19 @@ function tn = nfillgap(tk,gaps,currentGap,nfill)
 end
 
 function debugplots(dtn,gap,upperThreshold,lowerThreshold,nfill,correct)
-    subplot(212); hold off;
-    stem(dtn); hold on;
+figure
+stem(dtn); hold on;
     if correct
         stem(gap:gap+nfill,dtn(gap:gap+nfill),'g','LineWidth',1);
     else
         stem(gap:gap+nfill,dtn(gap:gap+nfill),'r','LineWidth',1);
     end
-%     axis tight
+    axis tight
     ylabel('Corrected RR [s]')
-    xlabel('Samples');% ylim([0 1.7])
-    line(xlim,[upperThreshold upperThreshold],'Color','k');
-    line(xlim,[lowerThreshold lowerThreshold],'Color','k');
-    sgtitle(sprintf('Trying with %i insertion(s)',nfill)); % suptitle for older matlab version
+    xlabel('Samples'); ylim([0 3.5])
+%     line(xlim,[upperThreshold upperThreshold],'Color','k');
+%     line(xlim,[lowerThreshold lowerThreshold],'Color','k');
+%     suptitle(sprintf('Trying with %i insertion(s)',nfill)); % sgtitle for newer matlab version
+set(gcf,'position',[500,300,800,500]); box off
     pause;
 end

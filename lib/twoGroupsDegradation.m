@@ -9,10 +9,10 @@ for jj=1:length(deletionProbability)
         aux1(kk,jj) = resultsSupine{kk,jj}.(index); %#ok<AGROW>
         aux2(kk,jj) = resultsTilt{kk,jj}.(index); %#ok<AGROW>
     end
-    significance(jj) = signrank(aux1(:,jj),aux2(:,jj)); %#ok<AGROW>
+    significance(jj) = signrank(aux1(:,jj),aux2(:,jj)'); %#ok<AGROW>
 end
-% fancyBoxplot(aux1,aux2,deletionProbability,significance,true)
-% ylabel(index,'interpreter','tex');
+fancyBoxplot(aux1,aux2,deletionProbability,significance,true); set(gcf,'position',[500,300,800,500]); box off
+ylabel(index);
 
 end
 

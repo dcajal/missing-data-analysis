@@ -23,7 +23,7 @@ if mod
     color1 = [0 166 73]/255; % Green
 end
     
-figure('DefaultAxesFontSize',14)
+% figure
 b1 = boxplot(values1,x1,'Positions',x1,'Colors',color1,'Widths',0.25);
 hold on
 b2 = boxplot(values2,x2,'Positions',x2,'Colors','b','Widths',0.25);
@@ -39,7 +39,7 @@ xlim([0 length(x1)+1])
 if mod
     xlim([0 length(x1)+2])
 end
-xlabel('Deletion probability (%)', 'interpreter','tex')
+xlabel('Deletion probability (\%)')
 % xlabel('Burst duration [s]')
 set(gca,'XTick',1:size(values1,2),'XTickLabel',stages)
 if mod
@@ -61,7 +61,7 @@ tickHeight = 0.02*(yLim(2)-yLim(1));
 
 hold on
 for jj = 1:size(values1,2)
-    if significance(jj)<0.025
+    if significance(jj)<0.001
         yPos = max([values1(:,jj); values2(:,jj)])+1.5*tickHeight;
         line([x1(jj) x2(jj)],[yPos yPos],'Color','k','LineWidth',1.5)
         line([x1(jj) x1(jj)],[yPos yPos-tickHeight],'Color','k','LineWidth',1.5)

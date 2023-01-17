@@ -20,5 +20,10 @@ TiltECG.tk = Ecg.qrs(find(Ecg.qrs>=tiltMarks(3),1):find(Ecg.qrs<=tiltMarks(4),1,
 TiltECG.tk = TiltECG.tk-tiltMarks(3);
 % TiltECG.samplerate = Ecg.samplerate;
 
+SupineECG.tk = [2*SupineECG.tk(1)-SupineECG.tk(2); SupineECG.tk; 2*SupineECG.tk(end)-SupineECG.tk(end-1)];
+SupineECG.tk = [2*SupineECG.tk(1)-SupineECG.tk(2); SupineECG.tk; 2*SupineECG.tk(end)-SupineECG.tk(end-1)];
+TiltECG.tk = [2*TiltECG.tk(1)-TiltECG.tk(2); TiltECG.tk; 2*TiltECG.tk(end)-TiltECG.tk(end-1)];
+TiltECG.tk = [2*TiltECG.tk(1)-TiltECG.tk(2); TiltECG.tk; 2*TiltECG.tk(end)-TiltECG.tk(end-1)];
+
 end
 

@@ -4,13 +4,14 @@ clear
 addpath('lib','AppleWatch/database');
 figurePresets
 
-segmentDurationSec = 2*60;
-stepDurationSec = 1*60;
+segmentDurationSec = 120;
+stepDurationSec = 50;
 fs = 4;
 nfft = 2^10;
 wdw = 60; % seconds
 noverlap = 30; % seconds
 f = linspace(0,0.4,nfft);
+plotflag = false;
 
 % Load all files in database directory
 dirlist = dir('AppleWatch/database');
@@ -28,66 +29,85 @@ for kk = 1:length(files)
     tRRH7stress = tRRH7stress/1000;  
     
     segmentBegin = 0:stepDurationSec:min(tRRH7relax(end),tRRH7stress(end))-segmentDurationSec;
-    segmentEnd = segmentBegin+segmentDurationSec;
+    segmentEnd = segmentBegin+segmentDurationSec+1;
     
     if ~isempty(segmentBegin)
-        for jj = 1:2%length(segmentBegin)  
+        for jj = 1:3%length(segmentBegin)  
             fprintf('Analyzing %s (relax), Segment %d...',files{kk},jj);
             referenceSegment = tRRH7relax(tRRH7relax>segmentBegin(jj) & tRRH7relax<segmentEnd(jj));
             awSegment = tRRAWrelax(tRRAWrelax>segmentBegin(jj) & tRRAWrelax<segmentEnd(jj));
                     
             % Reference
-            dReferenceSegment = diff(referenceSegment);
-            dReferenceSegment = 1000.*dReferenceSegment;
-            dReferenceSegment = detrend(dReferenceSegment);
-            psdReference = plombav(referenceSegment(2:end),dReferenceSegment,f,wdw,noverlap);
+            dReference = diff(referenceSegment);
+            hrReference = 1000./dReference;
+            hrReference = detrend(hrReference);
+            psdReference = plombav(referenceSegment(2:end),hrReference,f,wdw,noverlap);
             
-            % Apple Watch remove outliers
+                                  
+            % Apple Watch L
+            tnL = gapcorrector(awSegment);
+            dtnL = diff(tnL);
+            hrL = 1000./dtnL;
+            hrL = detrend(hrL);
+            psdL = plombav(tnL(2:end),hrL,f,wdw,noverlap);
+            
+            % Apple Watch NL
+            tnNL = gapcorrectorNonLinear(awSegment);
+            dtnNL = diff(tnNL);
+            hrNL = 1000./dtnNL;
+            hrNL = detrend(hrNL);
+            psdNL = plombav(tnNL(2:end),hrNL,f,wdw,noverlap);
+            
+            % Apple Watch OR
             dAw = diff(awSegment);
+            awSegment = awSegment(2:end);
             threshold = computeThreshold(dAw);
             awSegment(dAw>threshold) = [];
             dAw(dAw>threshold) = [];
-            dAw = 1000.*dAw;
-            dAw = detrend(dAw);
-            psdAwRemoveOutliers = plombav(awSegment(2:end),dAw,f,wdw,noverlap);
+            hrAw = 1000./dAw;
+            hrAw = detrend(hrAw);
+            psdOR = plombav(awSegment,hrAw,f,wdw,noverlap);
             
-            % Apple Watch incidences
-            [~,~,~,tnAwIncidences] = incidences(awSegment);
-            dtnAwIncidences = diff(tnAwIncidences);
-            dtnAwIncidences = 1000.*dtnAwIncidences;
-            dtnAwIncidences = detrend(dtnAwIncidences);
-            psdAwIncidences = plombav(tnAwIncidences(2:end),dtnAwIncidences,f,wdw,noverlap);
-            
-            % Apple Watch iterative
-            tnAwIterative = gapcorrector(awSegment);
-            dtnAwIterative = diff(tnAwIterative);
-            dtnAwIterative = 1000.*dtnAwIterative;
-            dtnAwIterative = detrend(dtnAwIterative);
-            psdAwIterative = plombav(tnAwIterative(2:end),dtnAwIterative,f,wdw,noverlap);
-            
-            % Apple Watch iterative non linear
-            tnAwIterativeNL = gapcorrectorNonLinear(awSegment);
-            dtnAwIterativeNL = diff(tnAwIterativeNL);
-            dtnAwIterativeNL = 1000.*dtnAwIterativeNL;
-            dtnAwIterativeNL = detrend(dtnAwIterativeNL);
-            psdAwIterativeNL = plombav(tnAwIterativeNL(2:end),dtnAwIterativeNL,f,wdw,noverlap);
             
             [bb, aa] = butter(15, 0.04*2, 'high');
             h = freqz(bb,aa,nfft);
             psdReference = psdReference.*abs(h);
-            psdAwRemoveOutliers = psdAwRemoveOutliers.*abs(h);
-            psdAwIncidences = psdAwIncidences.*abs(h);
-            psdAwIterative = psdAwIterative.*abs(h);
-            psdAwIterativeNL = psdAwIterativeNL.*abs(h);
+            psdOR = psdOR.*abs(h);
+            psdL = psdL.*abs(h);
+            psdNL = psdNL.*abs(h);
             clear h bb aa
             
               
             reference{saveIndex} = freqind(psdReference, f); %#ok<*SAGROW>
-            awRemoveOutliers{saveIndex} = freqind(psdAwRemoveOutliers, f); %#ok<*SAGROW>
-            awIncidences{saveIndex} = freqind(psdAwIncidences, f); %#ok<*SAGROW>
-            awIterative{saveIndex} = freqind(psdAwIterative, f); %#ok<*SAGROW>
-            awIterativeNL{saveIndex} = freqind(psdAwIterativeNL, f); %#ok<*SAGROW>
+            OR{saveIndex} = freqind(psdOR, f); %#ok<*SAGROW>
+            L{saveIndex} = freqind(psdL, f); %#ok<*SAGROW>
+            NL{saveIndex} = freqind(psdNL, f); %#ok<*SAGROW>
       
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Plots
+
+            if plotflag
+                figure('DefaultAxesFontSize',14,'units','normalized','outerposition',[0 0 1 1]); 
+                subplot(211)
+                plot(referenceSegment(2:end),dReference,'Linewidth',2); hold on;
+                plot(awSegment,dAw,'Linewidth',1);
+                plot(tnL(2:end),dtnL,'Linewidth',1);
+                plot(tnNL(2:end),dtnNL,'Linewidth',1);
+                legend('Reference (ECG)','OR','L','NL')
+                ylabel('NN [s]');
+                xlabel('Time [s]');
+                subplot(212)
+                plot(f,psdReference,'Linewidth',2); hold on;
+                plot(f,psdOR,'Linewidth',1);
+                plot(f,psdL,'Linewidth',1);
+                plot(f,psdNL,'Linewidth',1);
+                legend('Reference (ECG)','OR','L','NL');    
+                xlabel('Frequency [Hz]')
+                ylabel('PSD_{Lomb} [mHz^2]','interpreter','tex')
+                axis tight
+                pause                
+            end
             
             saveIndex = saveIndex+1;
             fprintf('Done\n');
@@ -99,56 +119,41 @@ for kk = 1:length(files)
             awSegment = tRRAWstress(tRRAWstress>segmentBegin(jj) & tRRAWstress<segmentEnd(jj));
 
             % Reference
-            dReferenceSegment = diff(referenceSegment);
-            dReferenceSegment = 1000.*dReferenceSegment;
-            dReferenceSegment = detrend(dReferenceSegment);
-            psdReference = plombav(referenceSegment(2:end),dReferenceSegment,f,wdw,noverlap);
+            dReference = diff(referenceSegment);
+            hrReference = 1000./dReference;
+            hrReference = detrend(hrReference);
+            psdReference = plombav(referenceSegment(2:end),hrReference,f,wdw,noverlap);
             
-            % Apple Watch none
+                                  
+            % Apple Watch L
+            tnL = gapcorrector(awSegment);
+            dtnL = diff(tnL);
+            hrL = 1000./dtnL;
+            hrL = detrend(hrL);
+            psdL = plombav(tnL(2:end),hrL,f,wdw,noverlap);
+            
+            % Apple Watch NL
+            tnNL = gapcorrectorNonLinear(awSegment);
+            dtnNL = diff(tnNL);
+            hrNL = 1000./dtnNL;
+            hrNL = detrend(hrNL);
+            psdNL = plombav(tnNL(2:end),hrNL,f,wdw,noverlap);
+            
+            % Apple Watch OR
             dAw = diff(awSegment);
+            awSegment = awSegment(2:end);
             threshold = computeThreshold(dAw);
             awSegment(dAw>threshold) = [];
             dAw(dAw>threshold) = [];
-            dAw = 1000.*dAw;
-            dAw = detrend(dAw);
-            psdAwRemoveOutliers = plombav(awSegment(2:end),dAw,f,wdw,noverlap);
-            
-            % Apple Watch incidences
-            [~,~,~,tnAwIncidences] = incidences(awSegment);
-            dtnAwIncidences = diff(tnAwIncidences);
-            dtnAwIncidences = 1000.*dtnAwIncidences;
-            dtnAwIncidences = detrend(dtnAwIncidences);
-            psdAwIncidences = plombav(tnAwIncidences(2:end),dtnAwIncidences,f,wdw,noverlap);
-            
-            % Apple Watch iterative
-            tnAwIterative = gapcorrector(awSegment);
-            dtnAwIterative = diff(tnAwIterative);
-            dtnAwIterative = 1000.*dtnAwIterative;
-            dtnAwIterative = detrend(dtnAwIterative);
-            psdAwIterative = plombav(tnAwIterative(2:end),dtnAwIterative,f,wdw,noverlap);
-            
-            % Apple Watch iterative non linear
-            tnAwIterativeNL = gapcorrectorNonLinear(awSegment);
-            dtnAwIterativeNL = diff(tnAwIterativeNL);
-            dtnAwIterativeNL = 1000.*dtnAwIterativeNL;
-            dtnAwIterativeNL = detrend(dtnAwIterativeNL);
-            psdAwIterativeNL = plombav(tnAwIterativeNL(2:end),dtnAwIterativeNL,f,wdw,noverlap);
-            
-            [bb, aa] = butter(15, 0.04*2, 'high');
-            h = freqz(bb,aa,nfft);
-            psdReference = psdReference.*abs(h);
-            psdAwRemoveOutliers = psdAwRemoveOutliers.*abs(h);
-            psdAwIncidences = psdAwIncidences.*abs(h);
-            psdAwIterative = psdAwIterative.*abs(h);
-            psdAwIterativeNL = psdAwIterativeNL.*abs(h);
-            clear h bb aa
+            hrAw = 1000./dAw;
+            hrAw = detrend(hrAw);
+            psdOR = plombav(awSegment,hrAw,f,wdw,noverlap);
             
               
             reference{saveIndex} = freqind(psdReference, f); %#ok<*SAGROW>
-            awRemoveOutliers{saveIndex} = freqind(psdAwRemoveOutliers, f); %#ok<*SAGROW>
-            awIncidences{saveIndex} = freqind(psdAwIncidences, f); %#ok<*SAGROW>
-            awIterative{saveIndex} = freqind(psdAwIterative, f); %#ok<*SAGROW>
-            awIterativeNL{saveIndex} = freqind(psdAwIterativeNL, f); %#ok<*SAGROW>
+            OR{saveIndex} = freqind(psdOR, f); %#ok<*SAGROW>
+            L{saveIndex} = freqind(psdL, f); %#ok<*SAGROW>
+            NL{saveIndex} = freqind(psdNL, f); %#ok<*SAGROW>
       
             
             saveIndex = saveIndex+1;
@@ -157,47 +162,97 @@ for kk = 1:length(files)
     end
 end
 
-results = [reference; awRemoveOutliers; awIncidences; awIterative; awIterativeNL];
+results = [reference; OR; L; NL];
 
 
-%             figure;
-%             plot(tReference,mtReference,'-'); hold on;
-%             plot(taw,mtAwNone,'--');
-%             plot(taw,mtAwIncidences,'-*');
-%             plot(taw,mtAwIterative,'-^');
-%             legend('Reference','IPFM','Incidences','Iterative')
-%             axis tight; set(gcf, 'Position', get(0, 'Screensize'));
-%             pause;
-            
-%             figure;
-%             plot(f,psdReference,'-'); hold on;
-%             plot(f,psdAwIpfm,'--');
-%             plot(f,psdAwIncidences,'-*');
-%             plot(f,psdAwIterative,'-^');
-%             legend('Reference','IPFM','Incidences','Iterative')
-%             axis tight; set(gcf, 'Position', get(0, 'Screensize'));
-%             pause;
+%% Reference values
+
+fprintf('\n'); fprintf('\n')
+fprintf('---------------------------------------------------------------------------------------\n')
+fprintf('           Reference values\n');
+disp('Measure');
+fprintf('---------------------------------------------------------------------------------------\n')
+
+ref = getReferenceValues(reference(1:2:end), reference(2:2:end), 'LF');
+fprintf('LF             '); fprintf('%.2f (%.2f-%.2f)       ',ref); fprintf('\n')
+
+ref = getReferenceValues(reference(1:2:end), reference(2:2:end), 'HF');
+fprintf('HF            '); fprintf('%.2f (%.2f-%.2f)       ',ref); fprintf('\n')
+
+
+fprintf('---------------------------------------------------------------------------------------\n')
+
+
 
 %% Results
 
-errorThreshold = 0.001:0.001:0.3;
+errorThreshold = 0.001:0.001:0.25;
 % errorThreshold = 0.01;
 
 fprintf('\n'); fprintf('\n')
 fprintf('---------------------------------------------------------------------------------------\n')
 fprintf('Absolute error: Freq indexes (Lomb), AW\n');
 disp('Measure          Method');
-fprintf('                 Remove outliers            Incidences            Iterative            Iterative NL\n');
+fprintf('                 Remove outliers            Iterative            Iterative NL\n');
 fprintf('---------------------------------------------------------------------------------------\n')
 
+figure(1)
 error = computeLombCoverage(results, errorThreshold, 'LF');
-fprintf('LF              '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
+fprintf('LF              '); fprintf('%.2f (%.2f -- %.2f) &  ',error); fprintf('\n')
+% exportgraphics(gca,'aw_lomb_lf.pdf') 
 
+figure(2)
 error = computeLombCoverage(results, errorThreshold, 'HF');
-fprintf('HF              '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
+fprintf('HF              '); fprintf('%.2f (%.2f -- %.2f) &  ',error); fprintf('\n')
+% exportgraphics(gca,'aw_lomb_hf.pdf') 
 
-error = computeLombCoverage(results, errorThreshold, 'LFn');
-fprintf('LFn              '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
 
-error = computeLombCoverage(results, errorThreshold, 'LFHF');
-fprintf('LFHF              '); fprintf('%.2f (%.2f-%.2f)        ',error); fprintf('\n')
+
+%% Sympathovagal balance results
+ 
+figure(1)
+groupDiscriminationAW(results, 'LF');
+ylabel('P_{LF} [mHz^2]','interpreter','tex')
+% exportgraphics(gca,'aw_lf_lomb_groups.pdf') 
+
+figure(2)
+groupDiscriminationAW(results, 'HF');
+ylabel('P_{HF} [mHz^2]','interpreter','tex')
+% exportgraphics(gca,'aw_hf_lomb_groups.pdf') 
+
+figure(3)
+groupDiscriminationAW(results, 'LFn');
+ylabel('P_{LFn}');
+% exportgraphics(gca,'aw_lfn_lomb_groups.pdf') 
+
+figure(4)
+groupDiscriminationAW(results, 'LFHF');
+ylabel('P_{LF}/P_{HF}');
+% exportgraphics(gca,'aw_lfhf_lomb_groups.pdf') 
+
+
+%% Statistical differences between methods
+
+metric = 'HF';
+
+fprintf('\n'); fprintf('\n')
+fprintf('---------------------------------------------------------------------------------------\n')
+
+figure(1)
+significance = twoGroupsDegradation(OR', L', 0, metric);
+fprintf('pvalues ro-l      '); fprintf('%.2f       ',significance); fprintf('\n')
+% fprintf('rvalues         '); fprintf('%.2f       ',rvalues(2:end)); fprintf('\n')
+
+figure(2)
+significance = twoGroupsDegradation(L', NL', 0, metric);
+fprintf('pvalues l-nl      '); fprintf('%.2f       ',significance); fprintf('\n')
+% fprintf('rvalues         '); fprintf('%.2f       ',rvalues(2:end)); fprintf('\n')
+
+figure(3)
+significance = twoGroupsDegradation(OR', NL', 0, metric);
+fprintf('pvalues ro-nl     '); fprintf('%.2f       ',significance); fprintf('\n')
+% fprintf('rvalues         '); fprintf('%.2f       ',rvalues(2:end)); fprintf('\n')
+
+
+fprintf('---------------------------------------------------------------------------------------\n')
+

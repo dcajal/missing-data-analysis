@@ -1,10 +1,11 @@
-function [ mt , d_HR ] = ipfm ( tm, ids, t , ord )
+function [ iht , d_HR ] = ipfm ( tm, ids, t , ord )
 % Estimation of instantaneous heart rate based on the IPFM model
 % sp        =	IPFM (tn,ids,ord)
 % tn        =	normal beat ocurrence time series (in seconds)
 % ids       =	beat indices following each incidence
 % t         =   vector of time with query points for interpolation
 % ord       =	order of the spline for the interpolation (default, 14)
+% ihr       =   Instantaneous Heart Rate evaluated on t from d_HR
 % d_HR(t)	=	(1+m(t))/T interpolated with splines of order 'ord'
 
 % (c) <Javier Mateo>, 7-Dic-2001. 
@@ -42,7 +43,7 @@ if ~isempty(ids)
         [s,tex,x]   =   calcjump ( tt , ids+k , 4 , MG )    ;
     catch
         disp('Timeout reached. mt set as empty.');
-        mt = [];
+        iht = [];
         d_HR = [];
         return
     end
@@ -54,14 +55,14 @@ end
 
 d_HR	=   fnder(  spapi( ord , tex+tm(1) , x )  );
 
-mt      =	spval(d_HR,t);
+iht      =	spval(d_HR,t);
 
 % Zeros not allowed
-if mt(1) == 0
-    mt(1:find(mt>0,1)) = mt(find(mt>0,1));
+if iht(1) == 0
+    iht(1:find(iht>0,1)) = iht(find(iht>0,1));
 end
-if mt(end) == 0
-    mt(find(mt>0,1,'last'):end) = mt(find(mt>0,1,'last'));
+if iht(end) == 0
+    iht(find(iht>0,1,'last'):end) = iht(find(iht>0,1,'last'));
 end
 
 end
